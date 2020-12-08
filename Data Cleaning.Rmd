@@ -1,0 +1,70 @@
+---
+title: "Data Cleaning Project"
+author: "David Jayeoba"
+date: "October 21, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Introduction
+This project aims at cleaning a messy dataset extracted from a database and converted to an excel format.
+The indexs in the third column needs to be split into different columns with their respective headers. There are serveral ways to achieve this but, would be using the package "tidyjson" since the transcation column items is in form of a format.
+
+## Importing the needed libraries.
+
+```{r}
+library(tidyverse) # data importing and manipulating data
+library(readxl)
+install.packages("tidyjson") # provides tools to turn complex JSON data into tidy tibbles and data frames.
+```
+
+```{r}
+dirty<- read_xlsx("dirty.xlsx")# Importing the dataset
+view(dirty)
+```
+
+```{r}
+dirt$transaction<- str_replace_all(dirt$transaction, "\'",'\"') # Replacing all single qoutes with double qoutes
+```
+
+```{r}
+dirty$trans<- paste("[",dirty$transaction,"]") # Concatenating the square backects to make the column a Json array  
+```
+
+## Using the tidyjson package 
+```{r}
+# Slitting into columns
+first<- dirty$trans %>% as.tbl_json %>% gather_array %>% spread_values(tx_id = jstring("tx_id"),tx_date = jstring("tx_date"),tx_amount = jstring("tx_amount"),tx_mode = jstring("tx_mode"),tx_channel = jstring("tx_channel"),bank_name = jstring("bank_name"),dob = jstring("dob"))
+
+view(first)
+```
+
+```{r}
+# Clearing unwanted columns
+first$document.id <- NULL
+first$array.index <- NULL
+first$..JSON<- NULL
+dirty$transaction<- NULL
+dirty$trans<- NULL
+view(first)
+view(dirty)
+```
+
+```{r}
+# Merge the two tables 
+data_new<- data.frame(dirty,first)
+```
+
+## Setting data type on each column 
+```{r}
+data_new$tx_amount<- as.numeric(data_new$tx_amount)
+data_new$dob<-as.Date(data_new$dob)
+view(data_new)
+
+writexl::write_xlsx(data_new,"dirty_clean.xlsx")
+
+```
+
+ 
